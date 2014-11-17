@@ -1,3 +1,5 @@
+require 'yaml'
+
 module Minesweeper
 
   class Tile
@@ -90,7 +92,7 @@ module Minesweeper
 
     attr_reader :grid
 
-    def initialize(size = 9, mines = 10)
+    def initialize(size, mines)
       @grid = Array.new(size) {|x| Array.new(size) {|y| Tile.new(self,[x,y]) } }
       @mines = mines
 
@@ -142,9 +144,12 @@ module Minesweeper
 
   class Game
 
-    def initialize
-      @game_board = Board.new
-
+    def initialize(should_load = false, size = 9, mines = 10)
+      if should_load
+        @game_board = YAML.load(File.read("savefile.yaml"))
+      else
+        @game_board = Board.new(size, mines)
+      end
     end
 
     def get_input
@@ -152,6 +157,7 @@ module Minesweeper
       while true
         puts "Please enter a coordinate and action(F for flag, R for Reveal)"
         input = gets.chomp
+        return input if input == "save"
         input = input.split(' ')
         break if good_input?(input)
         puts "Invalid input. Please try again."
@@ -177,17 +183,34 @@ module Minesweeper
       while true
         system("clear")
         @game_board.display
-        process_input(get_input)
+        input = get_input
+        if input == "save"
+          save
+          puts "Game saved!"
+        else
+          process_input(input)
+        end
+
         if @game_board.lost?
           @game_board.reveal_all
           puts "Game Over"
           break
         end
+
         if @game_board.won?
           @game_board.reveal_all
           puts "CONGRATULATIONS!!!!!!!!!!!"
           break
         end
+
+      end
+
+    end
+
+    def save
+      yaml = @game_board.to_yaml
+      File.open("savefile.yaml", "w") do |file|
+        file.write(yaml)
       end
 
     end
@@ -195,6 +218,7 @@ module Minesweeper
     private
 
     def good_input?(input)
+      return true if input == "save"
       input.size == 3 && (input[0] =~ /[FR]/i) && input.drop(1).all? do |i|
         (0...@game_board.grid.size) === i.to_i
       end
@@ -210,4 +234,13 @@ module Minesweeper
 
   end
 
+end
+
+if __FILE__ == $PROGRAM_NAME
+
+  if ARGV.shift == "load"
+    Minesweeper::Game.new(true).play
+  else
+    Minesweeper::Game.new.play
+  end
 end
