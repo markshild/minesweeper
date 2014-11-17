@@ -1,6 +1,18 @@
 module Minesweeper
 
   class Tile
+
+    NEIGHBORS = [
+      [-1, -1],
+      [-1, 0],
+      [-1, 1],
+      [0, 1],
+      [1, 1],
+      [1, 0],
+      [1, -1],
+      [0, -1]
+    ]
+
     def initialize(board, pos)
       @bombed = false
       @pos = pos
@@ -12,7 +24,12 @@ module Minesweeper
     end
 
     def neighbors
+      neighbors = NEIGHBORS.map do |offset|
+        x, y = offset
+        @board.grid[pos[0] + x][pos[1] + y]
+      end
 
+      neighbors.compact
     end
 
     def neighbor_bomb_count
@@ -40,6 +57,8 @@ module Minesweeper
   end
 
   class Board
+
+    attr_reader :grid
 
     def initialize(size = 9, mines = 10)
       @grid = Array.new(size) {|x| Array.new(size) {|y| Tile.new(self,[x,y]) } }
