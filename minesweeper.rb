@@ -18,11 +18,9 @@ module Minesweeper
       @pos = pos
       @board = board
       @flagged = false
+      @revealed = false
     end
 
-    def reveal
-
-    end
 
     def neighbors
       neighbors = NEIGHBORS.map do |offset|
@@ -50,11 +48,28 @@ module Minesweeper
     end
 
     def revealed?
+      @revealed
+    end
 
+    def reveal
+      @revealed = true
+      return false if bombed?
+      if neighbor_bomb_count.zero?
+        neighbors.each do |neighbor|
+          neighbor.reveal unless neighbor.bombed?
+        end
+      end
     end
 
     def set_bomb
       @bombed = true
+    end
+
+    def display_status
+      return 'F' if flagged?
+      return '*' unless revealed?
+      count =  neighbor_bomb_count
+      count == 0 ? '_' : count
     end
 
     def inspect
