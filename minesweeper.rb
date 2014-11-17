@@ -1,9 +1,22 @@
 module Minesweeper
 
   class Tile
-    def initialize(pos)
+    def initialize(board, pos)
       @bombed = false
       @pos = pos
+      @board = board
+    end
+
+    def reveal
+
+    end
+
+    def neighbors
+
+    end
+
+    def neighbor_bomb_count
+
     end
 
     def bombed?
@@ -22,12 +35,14 @@ module Minesweeper
       @bombed = true
     end
 
+    def inspect
+    end
   end
 
   class Board
 
     def initialize(size = 9, mines = 10)
-      @grid = Array.new(size) {|x| Array.new(size) {|y| Tile.new([x,y]) } }
+      @grid = Array.new(size) {|x| Array.new(size) {|y| Tile.new(self,[x,y]) } }
       mines.times do
         loop do
           x, y = rand(size -1), rand(size - 1)
