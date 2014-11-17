@@ -25,7 +25,7 @@ module Minesweeper
     def neighbors
       neighbors = NEIGHBORS.map do |offset|
         x, y = offset
-        @board.grid[pos[0] + x][pos[1] + y]
+        @board.grid[offset[0] + x][offset[1] + y]
       end
 
       neighbors.compact
@@ -92,6 +92,23 @@ module Minesweeper
         end
       end
     end
+
+    def display
+      display = @grid.map do |x|
+        x.map do |y|
+          y.display_status
+        end.join
+      end
+      puts display
+      # (0...size).each do |x|
+      #   (0...size).each do |y|
+      #     @grid[x][y]
+      #   end
+      #
+      # end
+    end
+
+  
 
   end
 
