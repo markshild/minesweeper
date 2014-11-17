@@ -46,7 +46,7 @@ module Minesweeper
     end
 
     def set_flag
-      @flagged = !@flagged
+      @flagged = !@flagged unless revealed?
     end
 
     def flagged?
@@ -93,7 +93,7 @@ module Minesweeper
     def initialize(size = 9, mines = 10)
       @grid = Array.new(size) {|x| Array.new(size) {|y| Tile.new(self,[x,y]) } }
       @mines = mines
-      
+
       mines.times do
         loop do
           x, y = rand(size -1), rand(size - 1)
@@ -151,17 +151,20 @@ module Minesweeper
 
       while true
         puts "Please enter a coordinate and action(F for flag, R for Reveal)"
-        input = gets.chomp.split(' ')
+        input = gets.chomp
+        input = input.split(' ')
         break if good_input?(input)
         puts "Invalid input. Please try again."
       end
+      input
     end
 
     def process_input(input)
       action, x, y = input
+      x, y = x.to_i, y.to_i
       tile = @game_board.grid[x][y]
       if action.upcase == 'F'
-        tile.flag
+        tile.set_flag
       elsif action.upcase == 'R'
         tile.reveal
       else
@@ -172,11 +175,17 @@ module Minesweeper
     def play
       puts "Welcome to Minesweeper!"
       while true
+        system("clear")
         @game_board.display
         process_input(get_input)
         if @game_board.lost?
-          puts "Game Over"
           @game_board.reveal_all
+          puts "Game Over"
+          break
+        end
+        if @game_board.won?
+          @game_board.reveal_all
+          puts "CONGRATULATIONS!!!!!!!!!!!"
           break
         end
       end
@@ -186,8 +195,8 @@ module Minesweeper
     private
 
     def good_input?(input)
-      input.size == 3 && (input[0] =~ /\A[FR]\z/i) && input.drop(1).all? do |i|
-        (0...@board.grid.size) === i)
+      input.size == 3 && (input[0] =~ /[FR]/i) && input.drop(1).all? do |i|
+        (0...@game_board.grid.size) === i.to_i
       end
     end
 
