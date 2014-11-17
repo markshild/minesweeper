@@ -1,8 +1,20 @@
+require 'colorize'
 require 'yaml'
 
 module Minesweeper
 
   class Tile
+
+    COLOR_NUMBERS = {
+      1 => :blue,
+      2 => :green,
+      3 => :light_red,
+      4 => :magenta,
+      5 => :yellow,
+      6 => :light_blue,
+      7 => :cyan,
+      8 => :light_black
+    }
 
     NEIGHBORS = [
       [-1, -1],
@@ -75,11 +87,17 @@ module Minesweeper
     end
 
     def display_status
-      return 'F' if flagged?
-      return '*' unless revealed?
-      return 'X' if bombed?
-      nbc =  neighbor_bomb_count
-      nbc.zero? ? '_' : nbc
+      return 'F'.colorize(:magenta) if flagged?
+      return '*'.colorize(:default) unless revealed?
+      return 'X'.colorize(:red) if bombed?
+      nbc = neighbor_bomb_count
+      nbc.zero? ? '_'.colorize(:light_black) : nbc.to_s.colorize(COLOR_NUMBERS[nbc])
+    end
+
+    def clear
+      if revealed? && neighbors.count(&:flagged?) == neighbor_bomb_count
+        neighbors.reject(&:flagged?).each {|n| n.reveal }
+      end
     end
 
     def inspect
@@ -108,11 +126,13 @@ module Minesweeper
     end
 
     def display
-      display = @grid.map do |x|
+      display = @grid.map.with_index do |x, i|
         x.map do |y|
           y.display_status
-        end.join(' ')
+        end.unshift(i).join(' ')
       end
+      display.unshift("  0 1 2 3 4 5 6 7 8")
+
       puts display
       # (0...size).each do |x|
       #   (0...size).each do |y|
@@ -140,22 +160,21 @@ module Minesweeper
       display
     end
 
+
+
   end
 
   class Game
 
     def initialize(should_load = false, size = 9, mines = 10)
-      if should_load
-        @game_board = YAML.load(File.read("savefile.yaml"))
-      else
-        @game_board = Board.new(size, mines)
-      end
+      @game_board = Board.new(size, mines)
+      @save_time = 0
     end
 
     def get_input
 
       while true
-        puts "Please enter a coordinate and action(F for flag, R for Reveal)"
+        puts "Please enter a coordinate and action (F for flag, R for Reveal, C for Clear)"
         input = gets.chomp
         return input if input == "save"
         input = input.split(' ')
@@ -173,6 +192,8 @@ module Minesweeper
         tile.set_flag
       elsif action.upcase == 'R'
         tile.reveal
+      elsif action.upcase == 'C'
+        tile.clear
       else
         raise "we should never see this."
       end
@@ -180,6 +201,7 @@ module Minesweeper
 
     def play
       puts "Welcome to Minesweeper!"
+      @start_time = Time.new
       while true
         system("clear")
         @game_board.display
@@ -198,8 +220,11 @@ module Minesweeper
         end
 
         if @game_board.won?
+          end_time = Time.new
           @game_board.reveal_all
           puts "CONGRATULATIONS!!!!!!!!!!!"
+          time = end_time - @start_time + @save_time
+          puts "You finished in #{time} seconds"
           break
         end
 
@@ -208,7 +233,8 @@ module Minesweeper
     end
 
     def save
-      yaml = @game_board.to_yaml
+      @save_time = Time.new - @start_time
+      yaml = self.to_yaml
       File.open("savefile.yaml", "w") do |file|
         file.write(yaml)
       end
@@ -219,7 +245,7 @@ module Minesweeper
 
     def good_input?(input)
       return true if input == "save"
-      input.size == 3 && (input[0] =~ /[FR]/i) && input.drop(1).all? do |i|
+      input.size == 3 && (input[0] =~ /[FRC]/i) && input.drop(1).all? do |i|
         (0...@game_board.grid.size) === i.to_i
       end
     end
@@ -239,7 +265,8 @@ end
 if __FILE__ == $PROGRAM_NAME
 
   if ARGV.shift == "load"
-    Minesweeper::Game.new(true).play
+    game = YAML.load(File.read("savefile.yaml")).play
+    game.start_time = Time.now
   else
     Minesweeper::Game.new.play
   end
