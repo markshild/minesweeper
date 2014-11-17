@@ -25,7 +25,8 @@ module Minesweeper
     def neighbors
       neighbors = NEIGHBORS.map do |offset|
         x, y = offset
-        @board.grid[offset[0] + x][offset[1] + y]
+        #check for 0+x greater than 8 or less than 0
+        @board.grid[@pos[0 + x]][@pos[1 + y]]
       end
 
       neighbors.compact
@@ -73,6 +74,8 @@ module Minesweeper
     end
 
     def inspect
+      "@pos = #{@pos}, @bombed = #{@bombed}"
+
     end
   end
 
@@ -91,6 +94,8 @@ module Minesweeper
           end
         end
       end
+      reveal_all
+      display
     end
 
     def display
@@ -108,7 +113,9 @@ module Minesweeper
       # end
     end
 
-  
+    def reveal_all
+      @grid.each { |row| row.each { |t| t.reveal } }
+    end
 
   end
 
