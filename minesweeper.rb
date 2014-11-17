@@ -59,12 +59,13 @@ module Minesweeper
 
     def reveal
       @revealed = true
-      return false if bombed?
       if neighbor_bomb_count.zero?
         neighbors.each do |neighbor|
-          neighbor.reveal unless neighbor.bombed? || neighbor.revealed?
+          neighbor.reveal unless neighbor.bombed? ||
+          neighbor.revealed? || neighbor.flagged?
         end
       end
+      true
     end
 
     def set_bomb
@@ -91,6 +92,8 @@ module Minesweeper
 
     def initialize(size = 9, mines = 10)
       @grid = Array.new(size) {|x| Array.new(size) {|y| Tile.new(self,[x,y]) } }
+      @mines = mines
+      
       mines.times do
         loop do
           x, y = rand(size -1), rand(size - 1)
@@ -100,8 +103,6 @@ module Minesweeper
           end
         end
       end
-      #reveal_all
-      display
     end
 
     def display
@@ -119,13 +120,85 @@ module Minesweeper
       # end
     end
 
+    def lost?
+      @grid.any? do |x|
+        x.any? {|y| y.revealed? && y.bombed?  }
+      end
+    end
+
+    def won?
+      revealed_count = @grid.map do |x|
+        x.count {|y| y.revealed? }
+      end.inject(:+)
+      revealed_count == @grid.size**2 - @mines
+    end
+
     def reveal_all
       @grid.each { |row| row.each { |t| t.reveal } }
+      display
     end
 
   end
 
   class Game
+
+    def initialize
+      @game_board = Board.new
+
+    end
+
+    def get_input
+
+      while true
+        puts "Please enter a coordinate and action(F for flag, R for Reveal)"
+        input = gets.chomp.split(' ')
+        break if good_input?(input)
+        puts "Invalid input. Please try again."
+      end
+    end
+
+    def process_input(input)
+      action, x, y = input
+      tile = @game_board.grid[x][y]
+      if action.upcase == 'F'
+        tile.flag
+      elsif action.upcase == 'R'
+        tile.reveal
+      else
+        raise "we should never see this."
+      end
+    end
+
+    def play
+      puts "Welcome to Minesweeper!"
+      while true
+        @game_board.display
+        process_input(get_input)
+        if @game_board.lost?
+          puts "Game Over"
+          @game_board.reveal_all
+          break
+        end
+      end
+
+    end
+
+    private
+
+    def good_input?(input)
+      input.size == 3 && (input[0] =~ /\A[FR]\z/i) && input.drop(1).all? do |i|
+        (0...@board.grid.size) === i)
+      end
+    end
+
+
+
+
+
+
+
+
+
   end
 
 end
