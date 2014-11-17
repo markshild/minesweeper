@@ -17,6 +17,7 @@ module Minesweeper
       @bombed = false
       @pos = pos
       @board = board
+      @flagged = false
     end
 
     def reveal
@@ -33,15 +34,19 @@ module Minesweeper
     end
 
     def neighbor_bomb_count
-
+      neighbors.count {|neighbor| neighbor.bombed?}
     end
 
     def bombed?
       @bombed
     end
 
-    def flagged?
+    def set_flag
+      @flagged = !@flagged
+    end
 
+    def flagged?
+      @flagged
     end
 
     def revealed?
